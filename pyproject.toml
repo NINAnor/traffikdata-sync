@@ -1,3 +1,7 @@
+[dependency-groups]
+dev = [
+  "deptry"
+]
 
 [project]
 authors = [
@@ -8,6 +12,7 @@ authors = [
 dependencies = [
   "django-environ",
   "dlt[duckdb]>=1.18.2",
+  "tqdm>=4.67.1"
 ]
 description = ""
 license = "GPL-3.0+"
@@ -16,14 +21,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 version = "0.1.0"
 
-
 [project.scripts]
 traffikdata-sync = "main:start"
-
-[dependency-groups]
-dev = [
-  "deptry",
-]
 
 [tool.ruff]
 fix = true
