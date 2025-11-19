@@ -1,0 +1,15 @@
+# Changes here will be overwritten by Copier
+_commit: v0.2.5
+_src_path: gh:ninanor/python-template
+author_name: Francesco Frassinelli
+debug: false
+default_branch_name: main
+docker: false
+email: francesco.frassinelli@nina.no
+notebook: false
+project_name: traffikdata-sync
+project_slug: traffikdata-sync
+repo_name: traffikdata-sync
+repo_org: ninanor
+template_type: python
+type_annotations: true
