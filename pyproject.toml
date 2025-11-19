@@ -6,7 +6,8 @@ authors = [
 # PEP 621 project metadata
 # See https://www.python.org/dev/peps/pep-0621/
 dependencies = [
-  "django-environ"
+  "django-environ",
+  "dlt[duckdb]>=1.18.2",
 ]
 description = ""
 license = "GPL-3.0+"
