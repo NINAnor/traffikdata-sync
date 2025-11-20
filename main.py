@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
-"""Main script."""
-
 import logging
-import pathlib
-from typing import Any
+from datetime import datetime
+from typing import Annotated, Any
 
 import dlt
-import environ
+import typer
 from dlt.sources.helpers.requests import Request, Response
 from dlt.sources.helpers.rest_client.client import RESTClient
 from dlt.sources.helpers.rest_client.paginators import (
@@ -15,23 +13,18 @@ from dlt.sources.helpers.rest_client.paginators import (
     SinglePagePaginator,
 )
 
-env = environ.Env()
-BASE_DIR = pathlib.Path(__file__).parent
-environ.Env.read_env(str(BASE_DIR / ".env"))
-
-DEBUG = env.bool("DEBUG", default=False)  # pyright: ignore[reportArgumentType]
-
-logging.basicConfig(level=(logging.DEBUG if DEBUG else logging.INFO))
-
 logger = logging.getLogger(__name__)
-
 client = RESTClient(
     base_url="https://trafikkdata-api.atlas.vegvesen.no/",
     headers={"User-Agent": "NINAnor-traffikdata-sync/0.1"},
 )
 
-FROM_DATE = "2009-01-01T00:00:00Z"
-TO_DATE = "2026-01-01T00:00:00Z"
+ZonedDateTime = Annotated[
+    datetime,
+    typer.Argument(
+        formats=["%Y-%m-%dT%H:%M:%SZ"],
+    ),
+]
 
 TRAFFIC_REGISTRATION_POINTS_QUERY = """
 {
@@ -134,7 +127,9 @@ def traffic_registration_points():
     write_disposition="merge",
     parallelized=True,
 )
-def traffic_data(point_id: str, from_timestamp: str, to_timestamp: str):
+def traffic_data(
+    point_id: str, from_timestamp: ZonedDateTime, to_timestamp: ZonedDateTime
+):
     logger.debug(
         f"Fetching traffic data for {point_id} from {from_timestamp} to {to_timestamp}"
     )
@@ -146,8 +141,8 @@ def traffic_data(point_id: str, from_timestamp: str, to_timestamp: str):
         json={
             "variables": {
                 "point_id": point_id,
-                "from": from_timestamp,
-                "to": to_timestamp,
+                "from": from_timestamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "to": to_timestamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "after": None,
             },
             "query": TRAFFIC_DATA_QUERY,
@@ -171,19 +166,33 @@ def get_id(records: list[dict[str, Any]]):
         yield record["id"]
 
 
-def start() -> None:
+app = typer.Typer()
+
+
+@app.callback()
+def main(
+    from_timestamp: ZonedDateTime,
+    to_timestamp: ZonedDateTime,
+    pipeline_name: Annotated[str, typer.Argument()] = "traffikdata_sync",
+    debug: bool = typer.Option(False, "--debug", help="Enable debug logging"),
+) -> None:
+    logging.basicConfig(level=(logging.DEBUG if debug else logging.INFO))
     pipeline = dlt.pipeline(
-        pipeline_name="trafficdata_sync",
+        pipeline_name=pipeline_name,
         destination="duckdb",
-        dataset_name="trafficdata",
+        dataset_name="traffikdata",
         progress="enlighten",
     )
     pipeline.run(traffic_registration_points())
     pipeline.run(
         traffic_registration_points()
         | get_id()
-        | traffic_data(from_timestamp=FROM_DATE, to_timestamp=TO_DATE)
+        | traffic_data(from_timestamp, to_timestamp)
     )
+
+
+def start():
+    typer.run(main)
 
 
 if __name__ == "__main__":
