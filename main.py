@@ -8,7 +8,6 @@ from typing import Any
 
 import dlt
 import environ
-import tqdm
 from dlt.sources.helpers.requests import Request, Response
 from dlt.sources.helpers.rest_client.client import RESTClient
 from dlt.sources.helpers.rest_client.paginators import (
@@ -172,30 +171,19 @@ def get_id(records: list[dict[str, Any]]):
         yield record["id"]
 
 
-@dlt.transformer(name="progress_monitor")
-def monitor_progress(item, pbar):
-    pbar.update(1)
-    yield item
-
-
 def start() -> None:
     pipeline = dlt.pipeline(
         pipeline_name="trafficdata_sync",
         destination="duckdb",
         dataset_name="trafficdata",
+        progress="enlighten",
     )
-    points = list(traffic_registration_points())
-    with (
-        tqdm.tqdm(total=len(points), unit="points", leave=True) as points_bar,
-        tqdm.tqdm(unit="records", smoothing=0, leave=True) as records_bar,
-    ):
-        pipeline.run(
-            traffic_registration_points()
-            | get_id()
-            | monitor_progress(pbar=points_bar).with_name("monitor_points")
-            | traffic_data(from_timestamp=FROM_DATE, to_timestamp=TO_DATE)
-            | monitor_progress(pbar=records_bar).with_name("monitor_records")
-        )
+    pipeline.run(traffic_registration_points())
+    pipeline.run(
+        traffic_registration_points()
+        | get_id()
+        | traffic_data(from_timestamp=FROM_DATE, to_timestamp=TO_DATE)
+    )
 
 
 if __name__ == "__main__":

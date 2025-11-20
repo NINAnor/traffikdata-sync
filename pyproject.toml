@@ -12,7 +12,7 @@ authors = [
 dependencies = [
   "django-environ",
   "dlt[duckdb]>=1.18.2",
-  "tqdm>=4.67.1"
+  "enlighten>=1.14.1"
 ]
 description = ""
 license = "GPL-3.0+"
@@ -23,6 +23,9 @@ version = "0.1.0"
 
 [project.scripts]
 traffikdata-sync = "main:start"
+
+[tool.deptry.per_rule_ignores]
+DEP002 = ["enlighten"]
 
 [tool.ruff]
 fix = true
