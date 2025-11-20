@@ -119,7 +119,7 @@ def traffic_registration_points():
     )
 
 
-@dlt.resource(
+@dlt.transformer(
     primary_key=[
         "traffic_registration_point_id",
         "from",
@@ -133,8 +133,12 @@ def traffic_registration_points():
         }
     ],
     write_disposition="merge",
+    parallelized=True,
 )
 def traffic_data(point_id: str, from_timestamp: str, to_timestamp: str):
+    logger.debug(
+        f"Fetching traffic data for {point_id} from {from_timestamp} to {to_timestamp}"
+    )
     pages = client.paginate(
         path="",
         method="POST",
@@ -161,13 +165,17 @@ def traffic_data(point_id: str, from_timestamp: str, to_timestamp: str):
             yield record
 
 
-registration_points_ids = []
+@dlt.transformer
+def get_id(records: list[dict[str, Any]]):
+    for record in records:
+        logger.debug(f"Processing record ID: {record}")
+        yield record["id"]
 
 
-def capture_ids(record: dict[str, Any]) -> dict[str, Any]:
-    global registration_points_ids
-    registration_points_ids.append(record["id"])
-    return record
+@dlt.transformer(name="progress_monitor")
+def monitor_progress(item, pbar):
+    pbar.update(1)
+    yield item
 
 
 def start() -> None:
@@ -176,11 +184,18 @@ def start() -> None:
         destination="duckdb",
         dataset_name="trafficdata",
     )
-    pipeline.run(traffic_registration_points().add_map(capture_ids))
-    for point_id in tqdm.tqdm(registration_points_ids):
-        logger.debug(f"Fetching traffic data for registration point ID: {point_id}")
-        info = pipeline.run(traffic_data(point_id, FROM_DATE, TO_DATE))
-        logger.debug(f"{info}")
+    points = list(traffic_registration_points())
+    with (
+        tqdm.tqdm(total=len(points), unit="points", leave=True) as points_bar,
+        tqdm.tqdm(unit="records", smoothing=0, leave=True) as records_bar,
+    ):
+        pipeline.run(
+            traffic_registration_points()
+            | get_id()
+            | monitor_progress(pbar=points_bar).with_name("monitor_points")
+            | traffic_data(from_timestamp=FROM_DATE, to_timestamp=TO_DATE)
+            | monitor_progress(pbar=records_bar).with_name("monitor_records")
+        )
 
 
 if __name__ == "__main__":
