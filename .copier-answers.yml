@@ -7,9 +7,9 @@ default_branch_name: main
 docker: false
 email: francesco.frassinelli@nina.no
 notebook: false
-project_name: traffikdata-sync
-project_slug: traffikdata-sync
-repo_name: traffikdata-sync
+project_name: trafikkdata-sync
+project_slug: trafikkdata-sync
+repo_name: trafikkdata-sync
 repo_org: ninanor
 template_type: python
 type_annotations: true

@@ -16,7 +16,7 @@ from dlt.sources.helpers.rest_client.paginators import (
 logger = logging.getLogger(__name__)
 client = RESTClient(
     base_url="https://trafikkdata-api.atlas.vegvesen.no/",
-    headers={"User-Agent": "NINAnor-traffikdata-sync/0.1"},
+    headers={"User-Agent": "NINAnor-trafikkdata-sync/0.1"},
 )
 
 ZonedDateTime = Annotated[
@@ -173,14 +173,14 @@ app = typer.Typer()
 def main(
     from_timestamp: ZonedDateTime,
     to_timestamp: ZonedDateTime,
-    pipeline_name: Annotated[str, typer.Argument()] = "traffikdata_sync",
+    pipeline_name: Annotated[str, typer.Argument()] = "trafikkdata_sync",
     debug: bool = typer.Option(False, "--debug", help="Enable debug logging"),
 ) -> None:
     logging.basicConfig(level=(logging.DEBUG if debug else logging.INFO))
     pipeline = dlt.pipeline(
         pipeline_name=pipeline_name,
         destination="duckdb",
-        dataset_name="traffikdata",
+        dataset_name="trafikkdata",
         progress="enlighten",
     )
     pipeline.run(traffic_registration_points())

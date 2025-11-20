@@ -915,7 +915,7 @@ wheels = [
 ]
 
 [[package]]
-name = "traffikdata-sync"
+name = "trafikkdata-sync"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

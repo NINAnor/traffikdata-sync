@@ -1,6 +1,7 @@
-# traffikdata-sync
+# traffikkdata-sync
 
-Fetch data from [Trafikkdata API](https://trafikkdata.atlas.vegvesen.no/om-api) and load it into a DuckDB database using DLT.
+Fetch data from [Trafikkdata API](https://trafikkdata.atlas.vegvesen.no/om-api) and load it into a DuckDB database using dlt.
+
 
 ## Setup
 
